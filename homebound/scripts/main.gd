@@ -10,30 +10,31 @@ var player_pos = Vector2.ZERO
 var ring_speed = 60.0
 var gap_width = 0.6
 var running = true
+var game_started = false
 var rings = []
 var spawn_timer = 0.0
 var spawn_interval = 1.3
 
 var stages = [
-	{ "name": "Big Bang", "ring_type": "out", "rings_to_pass": 1, "color": Color(1, 1, 1) },
-	{ "name": "Primordial Plasma", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.9, 0.3, 0.1) },
-	{ "name": "Recombination", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.9, 0.8, 0.4) },
-	{ "name": "The Dark Ages", "ring_type": "in", "rings_to_pass": 1, "color": Color(1, 1, 1), "low_visibility": true },
-	{ "name": "First Starlight", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.6, 0.8, 1.0) },
-	{ "name": "Protogalaxy", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.3, 0.6, 0.65) },
-	{ "name": "Nebula", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.75, 0.5, 0.8) },
-	{ "name": "Star Cluster", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.8, 0.9, 1.0) },
-	{ "name": "Supernova", "ring_type": "out", "rings_to_pass": 1, "color": Color(1.0, 0.5, 0.15) },
-	{ "name": "Neutron Star", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.7, 0.85, 1.0) },
-	{ "name": "Pulsar", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.6, 0.75, 1.0) },
-	{ "name": "Black Hole", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.03, 0.03, 0.05) },
-	{ "name": "Quasar", "ring_type": "in", "rings_to_pass": 1, "color": Color(1.0, 0.95, 0.6) },
-	{ "name": "Galactic Core", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.85, 0.7, 0.35) },
-	{ "name": "Wormhole", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.35, 0.55, 0.7), "two_path": true },
-	{ "name": "White Hole", "ring_type": "out", "rings_to_pass": 1, "color": Color(1, 1, 1) },
-	{ "name": "Molecular Cloud", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.5, 0.55, 0.65) },
-	{ "name": "Oort Cloud", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.7, 0.8, 0.9) },
-	{ "name": "Asteroid Belt", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.55, 0.45, 0.35) },
+	{ "name": "Big Bang", "ring_type": "out", "rings_to_pass": 3, "color": Color(1, 1, 1) },
+	{ "name": "Primordial Plasma", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.9, 0.3, 0.1) },
+	{ "name": "Recombination", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.9, 0.8, 0.4) },
+	{ "name": "The Dark Ages", "ring_type": "in", "rings_to_pass": 4, "color": Color(1, 1, 1), "low_visibility": true },
+	{ "name": "First Starlight", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.6, 0.8, 1.0) },
+	{ "name": "Protogalaxy", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.3, 0.6, 0.65) },
+	{ "name": "Nebula", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.75, 0.5, 0.8) },
+	{ "name": "Star Cluster", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.8, 0.9, 1.0) },
+	{ "name": "Supernova", "ring_type": "out", "rings_to_pass": 3, "color": Color(1.0, 0.5, 0.15) },
+	{ "name": "Neutron Star", "ring_type": "in", "rings_to_pass": 5, "color": Color(0.7, 0.85, 1.0) },
+	{ "name": "Pulsar", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.6, 0.75, 1.0) },
+	{ "name": "Black Hole", "ring_type": "in", "rings_to_pass": 6, "color": Color(0.03, 0.03, 0.05) },
+	{ "name": "Quasar", "ring_type": "in", "rings_to_pass": 5, "color": Color(1.0, 0.95, 0.6) },
+	{ "name": "Galactic Core", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.85, 0.7, 0.35) },
+	{ "name": "Wormhole", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.35, 0.55, 0.7), "two_path": true },
+	{ "name": "White Hole", "ring_type": "out", "rings_to_pass": 3, "color": Color(1, 1, 1) },
+	{ "name": "Molecular Cloud", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.5, 0.55, 0.65) },
+	{ "name": "Oort Cloud", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.7, 0.8, 0.9) },
+	{ "name": "Asteroid Belt", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.55, 0.45, 0.35) },
 	{ "name": "Earth", "ring_type": "none", "rings_to_pass": 0, "color": Color(0.25, 0.6, 0.5) },
 ]
 var stage_index = 0
@@ -46,6 +47,12 @@ func in_gap_range(angle: float, gs_raw: float, gw: float) -> bool:
 	return (a >= gs and a <= ge) if gs < ge else (a >= gs or a <= ge)
 
 func _process(delta):
+	if not game_started:
+		if Input.is_action_just_pressed("rotate_left") or Input.is_action_just_pressed("rotate_right"):
+			game_started = true
+			trail.emitting = true
+		queue_redraw()
+		return
 	if not running:
 		trail.emitting = false
 		return
@@ -56,7 +63,6 @@ func _process(delta):
 
 	player_pos = center + Vector2(cos(player_angle), sin(player_angle)) * player_radius
 	trail.position = player_pos
-	trail.emitting = true
 
 	spawn_timer += delta
 	if spawn_timer >= spawn_interval:
@@ -82,6 +88,7 @@ func _process(delta):
 			if passed:
 				on_ring_passed()
 			else:
+				$SfxFail.play()
 				running = false
 				print("Missed it — press Play again to retry")
 			break
@@ -137,6 +144,14 @@ func draw_ring(ring):
 		draw_circle(edge2, 5, Color(1, 0.95, 0.6))
 
 func _draw():
+	if not game_started:
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 110, center.y - 60), "HOMEBOUND", HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y - 20), "Born in the Big Bang. Searching for Earth.", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.8, 0.8, 0.85))
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 30), "Hold A/D or Left/Right to rotate.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.7, 0.7, 0.75))
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 55), "Line up with the gap as each ring closes in.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.7, 0.7, 0.75))
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 90), "18 of these locations are real. 2 are still just theory.", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.55, 0.6, 0.65))
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 120), "Press left or right to begin.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.9, 0.5))
+		return
 	var s = stages[stage_index]
 	if s.ring_type == "none":
 		draw_circle(center, 40, Color(0.2, 0.45, 0.75))

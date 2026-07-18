@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://yn33uottuds0"]
 
 [ext_resource type="Script" uid="uid://5i187nuge6pi" path="res://scripts/main.gd" id="1_elqb8"]
+[ext_resource type="AudioStream" uid="uid://7fka33cf51k8" path="res://assets/universfield-reward-chime-144757.mp3" id="2_rarhs"]
+[ext_resource type="AudioStream" uid="uid://brknt8wqqvh4b" path="res://assets/idoberg-space-chords-loop-310493.mp3" id="4_c01mt"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hdm0q"]
 particle_flag_disable_z = true
@@ -18,3 +20,10 @@ script = ExtResource("1_elqb8")
 amount = 32
 lifetime = 0.5
 process_material = SubResource("ParticleProcessMaterial_hdm0q")
+
+[node name="SfxFail" type="AudioStreamPlayer" parent="." unique_id=569225493]
+stream = ExtResource("2_rarhs")
+
+[node name="Ambient" type="AudioStreamPlayer" parent="." unique_id=712204422]
+stream = ExtResource("4_c01mt")
+autoplay = true
