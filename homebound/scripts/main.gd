@@ -1,12 +1,11 @@
 extends Node2D
 
-@onready var trail = $Trail
-
 var center = Vector2(300, 300)
 var player_radius = 80.0
 var player_angle = 0.0
 var angular_speed = 2.6
 var player_pos = Vector2.ZERO
+var facing_dir = 1.0
 var ring_speed = 60.0
 var gap_width = 0.6
 var running = true
@@ -14,6 +13,24 @@ var game_started = false
 var rings = []
 var spawn_timer = 0.0
 var spawn_interval = 1.3
+var trail_points = []
+var trail_max_length = 28
+
+var ending_phase = ""
+var ending_timer = 0.0
+var burst_start_pos = Vector2.ZERO
+var burst_stretch = 0.0
+var flash_alpha = 0.0
+
+var earth_rotation = 0.0
+var earth_rotation_speed = 0.5
+var earth_continents = [
+	{ "angle": 0.0, "y": -20, "size": 16 },
+	{ "angle": 1.4, "y": 10, "size": 12 },
+	{ "angle": 2.8, "y": -5, "size": 14 },
+	{ "angle": 4.2, "y": 20, "size": 10 },
+	{ "angle": 5.5, "y": 0, "size": 13 },
+]
 
 var stages = [
 	{ "name": "Big Bang", "ring_type": "out", "rings_to_pass": 3, "color": Color(1, 1, 1) },
@@ -48,21 +65,31 @@ func in_gap_range(angle: float, gs_raw: float, gw: float) -> bool:
 
 func _process(delta):
 	if not game_started:
+		earth_rotation += earth_rotation_speed * delta
 		if Input.is_action_just_pressed("rotate_left") or Input.is_action_just_pressed("rotate_right"):
 			game_started = true
-			trail.emitting = true
+		queue_redraw()
+		return
+	if ending_phase != "":
+		update_ending(delta)
 		queue_redraw()
 		return
 	if not running:
-		trail.emitting = false
+		if Input.is_action_just_pressed("ui_accept"):
+			restart_game()
+		queue_redraw()
 		return
 	if Input.is_action_pressed("rotate_left"):
 		player_angle -= angular_speed * delta
+		facing_dir = -1.0
 	if Input.is_action_pressed("rotate_right"):
 		player_angle += angular_speed * delta
+		facing_dir = 1.0
 
 	player_pos = center + Vector2(cos(player_angle), sin(player_angle)) * player_radius
-	trail.position = player_pos
+	trail_points.append(player_pos)
+	if trail_points.size() > trail_max_length:
+		trail_points.remove_at(0)
 
 	spawn_timer += delta
 	if spawn_timer >= spawn_interval:
@@ -90,7 +117,7 @@ func _process(delta):
 			else:
 				$SfxFail.play()
 				running = false
-				print("Missed it — press Play again to retry")
+				print("Missed it — press Enter to retry")
 			break
 		if ring.radius <= 0 or ring.radius > 300:
 			rings.remove_at(i)
@@ -112,15 +139,61 @@ func advance_stage():
 	var s = stages[stage_index]
 	modulate = s.color
 	if s.ring_type == "none":
-		enter_earth()
+		start_ending()
 		return
 	print("Now entering: " + s.name)
 
+func start_ending():
+	running = false
+	modulate = Color(1, 1, 1)
+	ending_phase = "burst"
+	ending_timer = 0.0
+	burst_start_pos = player_pos
+	print("Approaching Earth...")
+
+func update_ending(delta):
+	ending_timer += delta
+	if ending_phase == "burst":
+		var t = clamp(ending_timer / 0.9, 0.0, 1.0)
+		var eased = t * t
+		var dir = Vector2(cos(player_angle), sin(player_angle))
+		player_pos = burst_start_pos + dir * eased * 900.0
+		burst_stretch = eased * 1.6
+		if ending_timer >= 0.9:
+			ending_phase = "flash"
+			ending_timer = 0.0
+	elif ending_phase == "flash":
+		var t = clamp(ending_timer / 0.35, 0.0, 1.0)
+		flash_alpha = min(1.0, t / 0.5)
+		if ending_timer >= 0.35:
+			ending_phase = "reveal"
+			ending_timer = 0.0
+	elif ending_phase == "reveal":
+		var t = clamp(ending_timer / 1.0, 0.0, 1.0)
+		flash_alpha = 1.0 - t
+		if ending_timer >= 1.0:
+			ending_phase = ""
+			flash_alpha = 0.0
+			enter_earth()
+
 func enter_earth():
 	running = false
-	trail.emitting = false
 	print("Welcome home.")
-	queue_redraw()
+
+func restart_game():
+	stage_index = 0
+	passes_this_stage = 0
+	rings.clear()
+	trail_points.clear()
+	player_angle = 0.0
+	facing_dir = 1.0
+	spawn_timer = 0.0
+	ending_phase = ""
+	flash_alpha = 0.0
+	burst_stretch = 0.0
+	modulate = stages[0].color
+	running = true
+	print("Restarting the run.")
 
 func draw_ring(ring):
 	var s = stages[stage_index]
@@ -143,8 +216,76 @@ func draw_ring(ring):
 		draw_circle(edge1, 5, Color(1, 0.95, 0.6))
 		draw_circle(edge2, 5, Color(1, 0.95, 0.6))
 
+func draw_trail():
+	var n = trail_points.size()
+	if n < 2:
+		return
+	for i in range(n - 1):
+		var t = float(i) / float(n)
+		var alpha = t * 0.75
+		var width = 1.5 + t * 4.5
+		draw_line(trail_points[i], trail_points[i + 1], Color(0.4, 0.9, 1.0, alpha), width)
+
+func draw_ship():
+	var facing = player_angle + facing_dir * PI / 2.0
+	draw_set_transform(player_pos, facing, Vector2.ONE)
+	var pts = PackedVector2Array([
+		Vector2(12, 0),
+		Vector2(-8, -6),
+		Vector2(-4, 0),
+		Vector2(-8, 6)
+	])
+	draw_colored_polygon(pts, Color.CYAN)
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+func draw_burst_frame():
+	draw_line(burst_start_pos, player_pos, Color(0.6, 0.9, 1.0, 0.6), 3.0)
+	draw_set_transform(player_pos, player_angle, Vector2(1.0 + burst_stretch, 1.0))
+	var pts = PackedVector2Array([
+		Vector2(12, 0),
+		Vector2(-8, -6),
+		Vector2(-4, 0),
+		Vector2(-8, 6)
+	])
+	draw_colored_polygon(pts, Color(1, 1, 1))
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+func draw_earth_scene(show_lander: bool):
+	draw_circle(center, 40, Color(0.2, 0.45, 0.75))
+	draw_circle(center + Vector2(-14, -10), 12, Color(0.3, 0.6, 0.35))
+	draw_circle(center + Vector2(12, 14), 9, Color(0.3, 0.6, 0.35))
+	if show_lander:
+		var lander_pos = center + Vector2(22, -8)
+		draw_set_transform(lander_pos, -PI / 2.0, Vector2(0.6, 0.6))
+		var pts = PackedVector2Array([Vector2(12, 0), Vector2(-8, -6), Vector2(-4, 0), Vector2(-8, 6)])
+		draw_colored_polygon(pts, Color.CYAN)
+		draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+		var flag_base = lander_pos + Vector2(14, 4)
+		draw_line(flag_base, flag_base + Vector2(0, -14), Color(0.85, 0.85, 0.85), 2.0)
+		var flag_pts = PackedVector2Array([flag_base + Vector2(0, -14), flag_base + Vector2(10, -11), flag_base + Vector2(0, -8)])
+		draw_colored_polygon(flag_pts, Color(0.9, 0.2, 0.2))
+	draw_string(ThemeDB.fallback_font, Vector2(center.x - 20, center.y + 70), "home.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+	if show_lander:
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 105, center.y + 100), "Press Enter to fly again.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.75, 0.8, 0.85))
+
+func draw_menu_earth():
+	var e_center = Vector2(780, 320)
+	var e_radius = 90.0
+	draw_circle(e_center, e_radius, Color(0.15, 0.35, 0.65))
+	for c in earth_continents:
+		var a = c.angle + earth_rotation
+		var depth = cos(a)
+		if depth < -0.15:
+			continue
+		var x = e_center.x + sin(a) * e_radius * 0.9
+		var y = e_center.y + c.y
+		var alpha = clamp((depth + 0.15) / 1.15, 0.0, 1.0)
+		var size = c.size * (0.6 + 0.4 * depth)
+		draw_circle(Vector2(x, y), size, Color(0.25, 0.55, 0.3, alpha))
+
 func _draw():
 	if not game_started:
+		draw_menu_earth()
 		draw_string(ThemeDB.fallback_font, Vector2(center.x - 110, center.y - 60), "HOMEBOUND", HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Color.WHITE)
 		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y - 20), "Born in the Big Bang. Searching for Earth.", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.8, 0.8, 0.85))
 		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 30), "Hold A/D or Left/Right to rotate.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.7, 0.7, 0.75))
@@ -152,14 +293,22 @@ func _draw():
 		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 90), "18 of these locations are real. 2 are still just theory.", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.55, 0.6, 0.65))
 		draw_string(ThemeDB.fallback_font, Vector2(center.x - 140, center.y + 120), "Press left or right to begin.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.9, 0.5))
 		return
+	if ending_phase == "burst":
+		draw_burst_frame()
+		return
+	if ending_phase == "flash" or ending_phase == "reveal":
+		draw_earth_scene(true)
+		draw_rect(Rect2(-1000, -1000, 4000, 4000), Color(1, 1, 1, flash_alpha), true)
+		return
 	var s = stages[stage_index]
 	if s.ring_type == "none":
-		draw_circle(center, 40, Color(0.2, 0.45, 0.75))
-		draw_circle(center + Vector2(-14, -10), 12, Color(0.3, 0.6, 0.35))
-		draw_circle(center + Vector2(12, 14), 9, Color(0.3, 0.6, 0.35))
-		draw_string(ThemeDB.fallback_font, Vector2(center.x - 20, center.y + 70), "home.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+		draw_earth_scene(true)
 		return
 	draw_circle(center, 20, Color.WHITE)
 	for ring in rings:
 		draw_ring(ring)
-	draw_circle(player_pos, 6, Color.CYAN)
+	draw_trail()
+	draw_ship()
+	if not running:
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 60, center.y - 120), "Missed it.", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 105, center.y - 95), "Press Enter to try again.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.9, 0.5))

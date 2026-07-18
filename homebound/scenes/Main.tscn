@@ -26,4 +26,5 @@ stream = ExtResource("2_rarhs")
 
 [node name="Ambient" type="AudioStreamPlayer" parent="." unique_id=712204422]
 stream = ExtResource("4_c01mt")
+volume_db = -10.0
 autoplay = true
