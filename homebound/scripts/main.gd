@@ -15,25 +15,25 @@ var spawn_timer = 0.0
 var spawn_interval = 1.3
 
 var stages = [
-	{ "name": "Big Bang", "ring_type": "out", "rings_to_pass": 3, "color": Color(1, 1, 1) },
-	{ "name": "Primordial Plasma", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.9, 0.3, 0.1) },
-	{ "name": "Recombination", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.9, 0.8, 0.4) },
-	{ "name": "The Dark Ages", "ring_type": "in", "rings_to_pass": 4, "color": Color(1, 1, 1), "low_visibility": true },
-	{ "name": "First Starlight", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.6, 0.8, 1.0) },
-	{ "name": "Protogalaxy", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.3, 0.6, 0.65) },
-	{ "name": "Nebula", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.75, 0.5, 0.8) },
-	{ "name": "Star Cluster", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.8, 0.9, 1.0) },
-	{ "name": "Supernova", "ring_type": "out", "rings_to_pass": 3, "color": Color(1.0, 0.5, 0.15) },
-	{ "name": "Neutron Star", "ring_type": "in", "rings_to_pass": 5, "color": Color(0.7, 0.85, 1.0) },
-	{ "name": "Pulsar", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.6, 0.75, 1.0) },
-	{ "name": "Black Hole", "ring_type": "in", "rings_to_pass": 6, "color": Color(0.03, 0.03, 0.05) },
-	{ "name": "Quasar", "ring_type": "in", "rings_to_pass": 5, "color": Color(1.0, 0.95, 0.6) },
-	{ "name": "Galactic Core", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.85, 0.7, 0.35) },
-	{ "name": "Wormhole", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.35, 0.55, 0.7), "two_path": true },
-	{ "name": "White Hole", "ring_type": "out", "rings_to_pass": 3, "color": Color(1, 1, 1) },
-	{ "name": "Molecular Cloud", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.5, 0.55, 0.65) },
-	{ "name": "Oort Cloud", "ring_type": "in", "rings_to_pass": 3, "color": Color(0.7, 0.8, 0.9) },
-	{ "name": "Asteroid Belt", "ring_type": "in", "rings_to_pass": 4, "color": Color(0.55, 0.45, 0.35) },
+	{ "name": "Big Bang", "ring_type": "out", "rings_to_pass": 1, "color": Color(1, 1, 1) },
+	{ "name": "Primordial Plasma", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.9, 0.3, 0.1) },
+	{ "name": "Recombination", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.9, 0.8, 0.4) },
+	{ "name": "The Dark Ages", "ring_type": "in", "rings_to_pass": 1, "color": Color(1, 1, 1), "low_visibility": true },
+	{ "name": "First Starlight", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.6, 0.8, 1.0) },
+	{ "name": "Protogalaxy", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.3, 0.6, 0.65) },
+	{ "name": "Nebula", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.75, 0.5, 0.8) },
+	{ "name": "Star Cluster", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.8, 0.9, 1.0) },
+	{ "name": "Supernova", "ring_type": "out", "rings_to_pass": 1, "color": Color(1.0, 0.5, 0.15) },
+	{ "name": "Neutron Star", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.7, 0.85, 1.0) },
+	{ "name": "Pulsar", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.6, 0.75, 1.0) },
+	{ "name": "Black Hole", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.03, 0.03, 0.05) },
+	{ "name": "Quasar", "ring_type": "in", "rings_to_pass": 1, "color": Color(1.0, 0.95, 0.6) },
+	{ "name": "Galactic Core", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.85, 0.7, 0.35) },
+	{ "name": "Wormhole", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.35, 0.55, 0.7), "two_path": true },
+	{ "name": "White Hole", "ring_type": "out", "rings_to_pass": 1, "color": Color(1, 1, 1) },
+	{ "name": "Molecular Cloud", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.5, 0.55, 0.65) },
+	{ "name": "Oort Cloud", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.7, 0.8, 0.9) },
+	{ "name": "Asteroid Belt", "ring_type": "in", "rings_to_pass": 1, "color": Color(0.55, 0.45, 0.35) },
 	{ "name": "Earth", "ring_type": "none", "rings_to_pass": 0, "color": Color(0.25, 0.6, 0.5) },
 ]
 var stage_index = 0
@@ -105,20 +105,27 @@ func advance_stage():
 	var s = stages[stage_index]
 	modulate = s.color
 	if s.ring_type == "none":
-		print("Welcome home. You reached Earth.")
-		running = false
+		enter_earth()
 		return
 	print("Now entering: " + s.name)
+
+func enter_earth():
+	running = false
+	trail.emitting = false
+	print("Welcome home.")
+	queue_redraw()
 
 func draw_ring(ring):
 	var s = stages[stage_index]
 	var low_vis = s.get("low_visibility", false)
 	var wall_color = Color(0.15, 0.15, 0.18) if low_vis else Color.ORANGE
 	if ring.has("gap_start_2"):
-		var gaps = [ring.gap_start, ring.gap_start_2]
-		gaps.sort()
-		var g1 = fposmod(gaps[0], TAU)
-		var g2 = fposmod(gaps[1], TAU)
+		var g1 = fposmod(ring.gap_start, TAU)
+		var g2 = fposmod(ring.gap_start_2, TAU)
+		if g2 < g1:
+			var tmp = g1
+			g1 = g2
+			g2 = tmp
 		draw_arc(center, ring.radius, g1 + gap_width, g2, 48, wall_color, 4.0)
 		draw_arc(center, ring.radius, g2 + gap_width, g1 + TAU, 48, wall_color, 4.0)
 	else:
@@ -130,6 +137,13 @@ func draw_ring(ring):
 		draw_circle(edge2, 5, Color(1, 0.95, 0.6))
 
 func _draw():
+	var s = stages[stage_index]
+	if s.ring_type == "none":
+		draw_circle(center, 40, Color(0.2, 0.45, 0.75))
+		draw_circle(center + Vector2(-14, -10), 12, Color(0.3, 0.6, 0.35))
+		draw_circle(center + Vector2(12, 14), 9, Color(0.3, 0.6, 0.35))
+		draw_string(ThemeDB.fallback_font, Vector2(center.x - 20, center.y + 70), "home.", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+		return
 	draw_circle(center, 20, Color.WHITE)
 	for ring in rings:
 		draw_ring(ring)
