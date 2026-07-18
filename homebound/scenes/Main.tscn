@@ -2,5 +2,19 @@
 
 [ext_resource type="Script" uid="uid://5i187nuge6pi" path="res://scripts/main.gd" id="1_elqb8"]
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hdm0q"]
+particle_flag_disable_z = true
+spread = 15.0
+initial_velocity_min = 0.5
+initial_velocity_max = 1.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+color = Color(0.8784314, 1, 1, 1)
+
 [node name="Main" type="Node2D" unique_id=1851688080]
 script = ExtResource("1_elqb8")
+
+[node name="Trail" type="GPUParticles2D" parent="." unique_id=299638317]
+amount = 32
+lifetime = 0.5
+process_material = SubResource("ParticleProcessMaterial_hdm0q")
