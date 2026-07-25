@@ -26,7 +26,7 @@ var burst_stretch = 0.0
 var flash_alpha = 0.0
 
 var earth_rotation = 0.0
-var earth_rotation_speed = 0.2
+var earth_rotation_speed = 0.05
 var earth_continents = [
 	{ "angle": 0.0, "y": -20, "size": 16 },
 	{ "angle": 1.4, "y": 10, "size": 12 },
@@ -69,6 +69,7 @@ var stage_index = 0
 var passes_this_stage = 0
 
 func _ready():
+	center = get_viewport_rect().size / 2.0
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
 	for i in range(1, 5):
 		var path = "res://assets/bg_%d.png" % i
@@ -277,7 +278,8 @@ func draw_trail():
 		var t = float(i) / float(n)
 		var alpha = t * 0.75
 		var width = 1.5 + t * 4.5
-		draw_line(trail_points[i], trail_points[i + 1], Color(0.4, 0.9, 1.0, alpha), width)
+		var fire_color = Color(1.0, 0.85, 0.2).lerp(Color(0.8, 0.1, 0.05), 1.0 - t)
+		draw_line(trail_points[i], trail_points[i + 1], Color(fire_color.r, fire_color.g, fire_color.b, alpha), width)
 
 func draw_burst_frame():
 	draw_line(burst_start_pos, player_pos, Color(0.6, 0.9, 1.0, 0.6), 3.0)
@@ -314,8 +316,10 @@ func draw_earth_scene(show_lander: bool):
 		draw_string(font, Vector2(center.x - 105, center.y + 100), "Press Enter to fly again.", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.75, 0.8, 0.85))
 
 func draw_menu_earth():
-	var e_center = Vector2(780, 320)
-	var sz = 90.0
+	var vp = get_viewport_rect().size
+	var sz = vp.y * 0.85
+	var scale_factor = sz / 90.0
+	var e_center = Vector2(vp.x / 2.0, vp.y * 1.15)
 	if earth_texture != null:
 		draw_set_transform(e_center, earth_rotation, Vector2.ONE)
 		draw_texture_rect(earth_texture, Rect2(-sz, -sz, sz * 2, sz * 2), false)
@@ -328,9 +332,9 @@ func draw_menu_earth():
 			if depth < -0.15:
 				continue
 			var x = e_center.x + sin(a) * sz * 0.9
-			var y = e_center.y + c.y
+			var y = e_center.y + c.y * scale_factor
 			var alpha = clamp((depth + 0.15) / 1.15, 0.0, 1.0)
-			var size = c.size * (0.6 + 0.4 * depth)
+			var size = c.size * scale_factor * (0.6 + 0.4 * depth)
 			draw_circle(Vector2(x, y), size, Color(0.25, 0.55, 0.3, alpha))
 
 func draw_parallax_background():
@@ -362,14 +366,16 @@ func _draw():
 		draw_menu_earth()
 		var t_font = title_font if title_font != null else ThemeDB.fallback_font
 		var b_font = body_font if body_font != null else ThemeDB.fallback_font
-		var col_x = 60
-		var col_w = 480
-		draw_string(t_font, Vector2(col_x, center.y - 60), "HOMEBOUND", HORIZONTAL_ALIGNMENT_CENTER, col_w, 36, Color.WHITE)
-		draw_string(b_font, Vector2(col_x, center.y - 20), "Born in the Big Bang. Searching for Earth.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 16, Color(0.8, 0.8, 0.85))
-		draw_string(b_font, Vector2(col_x, center.y + 30), "Hold A/D or Left/Right to rotate.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(0.7, 0.7, 0.75))
-		draw_string(b_font, Vector2(col_x, center.y + 55), "Line up with the gap as each ring closes in.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(0.7, 0.7, 0.75))
-		draw_string(b_font, Vector2(col_x, center.y + 90), "18 of these locations are real. 2 are still just theory.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 12, Color(0.55, 0.6, 0.65))
-		draw_string(b_font, Vector2(col_x, center.y + 120), "Press left or right to begin.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(1, 0.9, 0.5))
+		var title_vp = get_viewport_rect().size
+		var col_w = min(560, title_vp.x - 80)
+		var col_x = title_vp.x / 2.0 - col_w / 2.0
+		var top_y = title_vp.y * 0.15
+		draw_string(t_font, Vector2(col_x, top_y), "HOMEBOUND", HORIZONTAL_ALIGNMENT_CENTER, col_w, 36, Color.WHITE)
+		draw_string(b_font, Vector2(col_x, top_y + 40), "Born in the Big Bang. Searching for Earth.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 16, Color(0.8, 0.8, 0.85))
+		draw_string(b_font, Vector2(col_x, top_y + 90), "Hold A/D or Left/Right to rotate.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(0.7, 0.7, 0.75))
+		draw_string(b_font, Vector2(col_x, top_y + 115), "Line up with the gap as each ring closes in.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(0.7, 0.7, 0.75))
+		draw_string(b_font, Vector2(col_x, top_y + 150), "18 of these locations are real. 2 are still just theory.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 12, Color(0.55, 0.6, 0.65))
+		draw_string(b_font, Vector2(col_x, top_y + 180), "Press left or right to begin.", HORIZONTAL_ALIGNMENT_CENTER, col_w, 14, Color(1, 0.9, 0.5))
 		return
 	if ending_phase == "burst":
 		draw_burst_frame()
@@ -387,6 +393,7 @@ func _draw():
 	for ring in rings:
 		draw_ring(ring)
 	draw_trail()
+	draw_stage_hud()
 	if not running:
 		var b_font2 = body_font if body_font != null else ThemeDB.fallback_font
 		draw_rect(Rect2(-2000, -2000, 6000, 6000), Color(0, 0, 0, 0.6), true)
@@ -411,3 +418,14 @@ func _draw():
 		draw_string(b_font2, Vector2(start_x + w1 + 1, y), seg2, HORIZONTAL_ALIGNMENT_LEFT, -1, seg_size,  seg_color_sp)
 		draw_string(b_font2, Vector2(start_x + w1, y), seg2, HORIZONTAL_ALIGNMENT_LEFT, -1, seg_size, seg_color_sp)
 		draw_string(b_font2, Vector2(start_x + w1 + w2, y), seg3, HORIZONTAL_ALIGNMENT_LEFT, -1, seg_size, seg_color)
+func draw_stage_hud():
+	var font = body_font if body_font != null else ThemeDB.fallback_font
+	var vp = get_viewport_rect().size
+	var s = stages[stage_index]
+	var stage_text = "Stage %d / %d" % [stage_index + 1, stages.size()]
+	var ring_text = "Ring %d / %d" % [passes_this_stage, s.rings_to_pass]
+	var stage_w = font.get_string_size(stage_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	var ring_w = font.get_string_size(ring_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var margin = 20	
+	draw_string(font, Vector2(vp.x - stage_w - margin, margin + 14), stage_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.9, 0.9))
+	draw_string(font, Vector2(vp.x - ring_w - margin, margin + 34), ring_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.7, 0.7, 0.75))
